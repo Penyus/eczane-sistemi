@@ -1,0 +1,14 @@
+# Python önbellek dosyaları
+__pycache__/
+*.py[cod]
+
+# Sanal ortam
+venv/
+env/
+
+# Veritabanı
+db.sqlite3
+
+# Çevresel değişkenler ve gizli dosyalar
+.env
+.DS_Store
