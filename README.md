@@ -36,7 +36,7 @@
 | **Back‑End** | Python 3.12+, Django 5.x, Django REST Framework | RESTful API, iş mantığı, yetkilendirme |
 | **Front‑End** | React 18, Vite, Bootstrap 5, React Router | Dinamik kullanıcı arayüzü, responsive tasarım |
 | **Veritabanı** | SQLite | Hafif, konfigürsyonsuz, standalone |
-| **Araçlar** | Git (GitFlow), Jira/Trello, Postman, pytest | Versiyon kontrol, proje yönetimi, test |
+| **Araçlar** | Git (GitFlow), Notion, Postman, pytest | Versiyon kontrol, proje yönetimi, test |
 
 ---
 
