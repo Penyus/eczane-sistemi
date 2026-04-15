@@ -45,9 +45,9 @@
 | Birim | Ekip Üyeleri | Sorumluluk |
 |-------|--------------|------------|
 | **Proje Yönetimi & QA** | Mehmet | Sprint planlama, süreç denetimi, test koordinasyonu |
-| **Veritabanı (DB)** | Beyza (lider), Dovlet, Yusuf* | ER şeması, SQLite modelleri, migration |
-| **Arka Uç (BE)** | Begli (lider), Yaren, Yusuf* | API geliştirme, RBAC, audit log |
-| **Ön Yüz (FE)** | Berat (lider), Kaan, Aslı, İrem | React arayüzü, state yönetimi, API entegrasyonu |
+| **Veritabanı (DB)** | Beyza , Dovlet, Yusuf* | ER şeması, SQLite modelleri, migration |
+| **Arka Uç (BE)** | Begli , Yaren, Yusuf* | API geliştirme, RBAC, audit log |
+| **Ön Yüz (FE)** | Berat , Kaan, Aslı, İrem | React arayüzü, state yönetimi, API entegrasyonu |
 
 > *Yusuf, DB ve BE arasında entegratör rolündedir.*
 
