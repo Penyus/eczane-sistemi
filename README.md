@@ -5,7 +5,7 @@
 
 <div align="center">
   <h1>💊 Eczane Stok ve Reçete Kayıt Sistemi</h1>
-  <p><strong>Dijital Eczane Yönetimi | Yerel Ağda Bağımsız Çalışan Çözüm</strong></p>
+  <p><strong>Dijital Eczane Yönetimi</strong></p>
   
   <!-- Rozetler (badges) - dinamik olarak güncellenebilir -->
   <img src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white" alt="Python 3.12+">
@@ -20,7 +20,7 @@
 
 ## 📌 Proje Hakkında
 
-**Eczane Stok ve Reçete Kayıt Sistemi**, manuel ve kağıt tabanlı eczane operasyonlarını dijital ortama taşıyan, **yerel ağda bağımsız (standalone)** çalışan bir yazılımdır. Sistem sayesinde ilaç stokları gerçek zamanlı takip edilir, reçeteler dijital arşivlenir ve eczane personelinin iş yükü azaltılır.
+**Eczane Stok ve Reçete Kayıt Sistemi**, manuel ve kağıt tabanlı eczane operasyonlarını dijital ortama taşıyan. Sistem sayesinde ilaç stokları gerçek zamanlı takip edilir, reçeteler dijital arşivlenir ve eczane personelinin iş yükü azaltılır.
 
 ### 🎯 Hedefler
 
