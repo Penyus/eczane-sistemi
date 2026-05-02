@@ -1,10 +1,11 @@
-# stok/views.py
-
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from django.db import transaction
+from django.db import models
+from datetime import date, timedelta
 
 from .models import Kategori, Ilac, StokHareket, Recete, ReceteIlac
 from .serializers import (
@@ -19,7 +20,6 @@ from .permissions import (
     KalfaOkuyabilirEczaciYazabilirPermission,
     EczaciVeyaKalfaPermission,
 )
-
 
 # ──────────────────────────────────────────────
 # 1. KATEGORİ
@@ -184,3 +184,128 @@ class ReceteIlacViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         recete_id = self.kwargs["recete_pk"]
         serializer.save(recete_id=recete_id)
+        # ──────────────────────────────────────────────
+# 6. GELİŞMİŞ — Kritik Stok ve Miad Endpoint'leri
+# ──────────────────────────────────────────────
+from datetime import date, timedelta
+from rest_framework.views import APIView
+
+
+class KritikStokView(APIView):
+    """
+    GET /api/v1/raporlar/kritik-stok/
+    Stok miktarı kritik eşiğin altına düşmüş ilaçları döndürür.
+    Hem Eczacı hem Kalfa görebilir.
+    """
+    permission_classes = [EczaciVeyaKalfaPermission]
+
+    def get(self, request):
+        ilaclar = Ilac.objects.filter(
+            is_deleted=False,
+            stok_miktari__lte=models.F("kritik_stok_esigi")
+            # F() ile iki alanı karşılaştırıyoruz — Python'a çekmeden DB'de çözülür
+        ).select_related("kategori").order_by("stok_miktari")
+
+        serializer = IlacSerializer(ilaclar, many=True)
+        return Response({
+            "toplam_kritik_ilac": ilaclar.count(),
+            "ilaclar": serializer.data,
+        })
+
+
+class MiadYaklasanView(APIView):
+    """
+    GET /api/v1/raporlar/miad-yaklasan/
+    Son kullanma tarihi 30 gün içinde dolacak ilaçları döndürür.
+    ?gun=60 parametresiyle gün sayısı değiştirilebilir.
+    Hem Eczacı hem Kalfa görebilir.
+    """
+    permission_classes = [EczaciVeyaKalfaPermission]
+
+    def get(self, request):
+        gun = int(request.query_params.get("gun", 30))  # Varsayılan 30 gün
+        bugun = date.today()
+        bitis = bugun + timedelta(days=gun)
+
+        ilaclar = Ilac.objects.filter(
+            is_deleted=False,
+            son_kullanma_tarihi__isnull=False,
+            son_kullanma_tarihi__gte=bugun,   # Bugün veya sonrası
+            son_kullanma_tarihi__lte=bitis,   # 30 gün içinde
+        ).select_related("kategori").order_by("son_kullanma_tarihi")
+
+        serializer = IlacSerializer(ilaclar, many=True)
+        return Response({
+            "kontrol_edilen_gun": gun,
+            "bugun": bugun,
+            "bitis_tarihi": bitis,
+            "toplam_ilac": ilaclar.count(),
+            "ilaclar": serializer.data,
+        })
+
+
+class MiadGecmisView(APIView):
+    """
+    GET /api/v1/raporlar/miad-gecmis/
+    Son kullanma tarihi geçmiş ilaçları döndürür.
+    Sadece Eczacı görebilir.
+    """
+    permission_classes = [SadeceEczaciPermission]
+
+    def get(self, request):
+        bugun = date.today()
+
+        ilaclar = Ilac.objects.filter(
+            is_deleted=False,
+            son_kullanma_tarihi__isnull=False,
+            son_kullanma_tarihi__lt=bugun,  # Bugünden önce
+        ).select_related("kategori").order_by("son_kullanma_tarihi")
+
+        serializer = IlacSerializer(ilaclar, many=True)
+        return Response({
+            "bugun": bugun,
+            "toplam_miad_gecmis": ilaclar.count(),
+            "ilaclar": serializer.data,
+        })
+
+
+class StokOzetiView(APIView):
+    """
+    GET /api/v1/raporlar/stok-ozeti/
+    Dashboard için genel stok özeti.
+    Hem Eczacı hem Kalfa görebilir.
+    """
+    permission_classes = [EczaciVeyaKalfaPermission]
+
+    def get(self, request):
+        from django.db.models import Sum, Count
+
+        bugun = date.today()
+        otuz_gun = bugun + timedelta(days=30)
+
+        toplam_ilac = Ilac.objects.filter(is_deleted=False).count()
+        kritik_ilac = Ilac.objects.filter(
+            is_deleted=False,
+            stok_miktari__lte=models.F("kritik_stok_esigi")
+        ).count()
+        miad_yaklasan = Ilac.objects.filter(
+            is_deleted=False,
+            son_kullanma_tarihi__gte=bugun,
+            son_kullanma_tarihi__lte=otuz_gun,
+        ).count()
+        miad_gecmis = Ilac.objects.filter(
+            is_deleted=False,
+            son_kullanma_tarihi__lt=bugun,
+        ).count()
+        bekleyen_recete = Recete.objects.filter(
+            is_deleted=False,
+            durum="bekliyor"
+        ).count()
+
+        return Response({
+            "toplam_ilac": toplam_ilac,
+            "kritik_stok_ilac_sayisi": kritik_ilac,
+            "miad_yaklasan_ilac_sayisi": miad_yaklasan,
+            "miad_gecmis_ilac_sayisi": miad_gecmis,
+            "bekleyen_recete_sayisi": bekleyen_recete,
+        })
