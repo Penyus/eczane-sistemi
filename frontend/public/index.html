@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hekim SaaS — Eczane Yönetim Sistemi</title>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs>
+    <rect width="100" height="100" rx="14" fill="url(#g)" />
+    <text x="50" y="60" font-family="Inter,sans-serif" font-weight="800" font-size="26" fill="white" text-anchor="middle" letter-spacing="1">EYS</text>
+  </svg>
+</template>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="hekim-saas.css" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="i18n.jsx"></script>
+<script type="text/babel" src="mock-data.jsx"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="login.jsx"></script>
+<script type="text/babel" src="app-screens.jsx"></script>
+<script type="text/babel" src="app-screens-saas.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "loginVariant": "centered",
+  "showPharmacyCode": false,
+  "showTcKimlik": false,
+  "showPhone": false,
+  "primaryColor": "#6366F1",
+  "startScreen": "app"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [lang, setLang] = useState("tr");
+  const [user, setUser] = useState(t.startScreen === "app" ? { username: "demo", token: "demo" } : null);
+  const [apiStatus, setApiStatus] = useState("offline");
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--hk-green", t.primaryColor);
+  }, [t.primaryColor]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/v1/", { method: "GET" });
+        if (!cancelled) setApiStatus(res.ok || res.status < 500 ? "online" : "offline");
+      } catch {
+        if (!cancelled) setApiStatus("offline");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const extraFields = [];
+  if (t.showPharmacyCode) extraFields.push("pharmacyCode");
+  if (t.showTcKimlik) extraFields.push("tcKimlik");
+  if (t.showPhone) extraFields.push("phone");
+
+  const onLogout = () => {
+    try { localStorage.removeItem("hekim_token"); } catch {}
+    setUser(null);
+    setTweak("startScreen", "login");
+  };
+
+  return (
+    <>
+      {!user ? (
+        <>
+          <div className="hk-variant-switcher">
+            <span className="lbl">{lang === "tr" ? "Varyasyon" : "Variant"}</span>
+            <button className={t.loginVariant === "split" ? "active" : ""}
+                    onClick={() => setTweak("loginVariant", "split")}>Split</button>
+            <button className={t.loginVariant === "centered" ? "active" : ""}
+                    onClick={() => setTweak("loginVariant", "centered")}>Centered</button>
+            <button className={t.loginVariant === "fullbleed" ? "active" : ""}
+                    onClick={() => setTweak("loginVariant", "fullbleed")}>Bleed</button>
+          </div>
+          <LoginScreen variant={t.loginVariant} lang={lang} setLang={setLang}
+                       apiStatus={apiStatus} extraFields={extraFields}
+                       onSuccess={(u) => { setUser(u); setTweak("startScreen", "app"); }} />
+        </>
+      ) : (
+        <MainAppSaas lang={lang} setLang={setLang} user={user}
+                 apiStatus={apiStatus} onLogout={onLogout} />
+      )}
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label={lang === "tr" ? "Login Layout" : "Login Layout"} />
+        <TweakRadio label={lang === "tr" ? "Varyasyon" : "Variant"} value={t.loginVariant}
+                    options={["split", "centered", "fullbleed"]}
+                    onChange={(v) => setTweak("loginVariant", v)} />
+
+        <TweakSection label={lang === "tr" ? "Login Form Alanları" : "Login Form Fields"} />
+        <TweakToggle label={lang === "tr" ? "Eczane kodu" : "Pharmacy code"}
+                     value={t.showPharmacyCode}
+                     onChange={(v) => setTweak("showPharmacyCode", v)} />
+        <TweakToggle label={lang === "tr" ? "T.C. Kimlik No" : "ID Number"}
+                     value={t.showTcKimlik}
+                     onChange={(v) => setTweak("showTcKimlik", v)} />
+        <TweakToggle label={lang === "tr" ? "Telefon" : "Phone"}
+                     value={t.showPhone}
+                     onChange={(v) => setTweak("showPhone", v)} />
+
+        <TweakSection label={lang === "tr" ? "Tema" : "Theme"} />
+        <TweakColor label={lang === "tr" ? "Ana renk" : "Primary"} value={t.primaryColor}
+                    onChange={(v) => setTweak("primaryColor", v)} />
+
+        <TweakSection label={lang === "tr" ? "Demo" : "Demo"} />
+        <TweakRadio label={lang === "tr" ? "Açılış" : "Start"} value={t.startScreen}
+                    options={["login", "app"]}
+                    onChange={(v) => {
+                      setTweak("startScreen", v);
+                      if (v === "login") setUser(null);
+                      if (v === "app") setUser({ username: "demo", token: "demo" });
+                    }} />
+        <TweakButton label={lang === "tr" ? "Çıkış (logout)" : "Sign out"}
+                     onClick={onLogout} />
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

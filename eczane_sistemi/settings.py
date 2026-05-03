@@ -105,3 +105,4 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Eczane yönetim sistemi REST API dokümantasyonu',
     'VERSION': '1.0.0',
 }
+STATICFILES_DIRS = [BASE_DIR / "eczane_sistemi" / "static"]
